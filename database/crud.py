@@ -1,59 +1,100 @@
 from database.database import create_connection, close_connection
+from datetime import datetime
+import logging
 
 
-# Создание таблицы "patients"
+logging.basicConfig(level=logging.INFO)
+
+
 def create_table():
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS patients (
-                id SERIAL PRIMARY KEY,
-                full_name VARCHAR(255) NOT NULL,
-                birth_date DATE NOT NULL
-            );
-        ''')
-        conn.commit()
-        cursor.close()
-        close_connection(conn)
+    connection = create_connection()
+    if connection:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS patients (
+                        patient_id SERIAL PRIMARY KEY,
+                        full_name VARCHAR(255) NOT NULL,
+                        birth_date DATE NOT NULL
+                    )
+                ''')
+                connection.commit()
+                logging.info("Таблица 'patients' успешно создана.")
+        except Exception as e:
+            logging.error(f"Ошибка при создании таблицы: {e}")
+        finally:
+            close_connection(connection)
     else:
-        print("Ошибка при подключении к базе данных.")
+        logging.error("Не удалось подключиться к базе данных для создания таблицы.")
 
 
-# Добавление пациента
-def add_patient(full_name: str, birth_date: str):
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO patients (full_name, birth_date) 
-            VALUES (%s, %s)
-        ''', (full_name, birth_date))
-        conn.commit()
-        cursor.close()
-        close_connection(conn)
+def add_patient(full_name: str, birth_date: str, visit_date: str):
+    connection = create_connection()
+    if connection:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('''
+                    INSERT INTO patients (full_name, birth_date, visit_date) 
+                    VALUES (%s, %s, %s)
+                ''', (full_name, birth_date, visit_date))
+                connection.commit()
+                logging.info(f"Пациент {full_name} добавлен с датой визита {visit_date}.")
+        except Exception as e:
+            logging.error(f"Ошибка при добавлении пациента: {e}")
+        finally:
+            close_connection(connection)
     else:
-        print("Ошибка при подключении к базе данных.")
+        logging.error("Не удалось подключиться к базе данных для добавления пациента.")
 
 
-# Получение списка пациентов, пришедших сегодня
 def get_today_patients():
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT * FROM patients 
-            WHERE birth_date = CURRENT_DATE
-        ''')
-        patients = cursor.fetchall()
-        cursor.close()
-        close_connection(conn)
-        return patients
+    connection = create_connection()
+    if connection:
+        try:
+            today = datetime.now().date()  # Получаем текущую дату
+
+            with connection.cursor() as cursor:
+                cursor.execute('''
+                    SELECT * FROM patients 
+                    WHERE visit_date = %s
+                ''', (today,))
+                patients = cursor.fetchall()
+                logging.info(f"Найдено {len(patients)} пациентов, пришедших сегодня.")
+                return patients
+        except Exception as e:
+            logging.error(f"Ошибка при получении списка пациентов: {e}")
+            return []
+        finally:
+            close_connection(connection)
     else:
-        print("Ошибка при подключении к базе данных.")
+        logging.error("Не удалось подключиться к базе данных для получения списка пациентов.")
         return []
 
-# Пример использования get_today_patients()
-# patients = get_today_patients()
-# for patient in patients:
-#     print(patient)
+
+def get_patients_count_per_day():
+    connection = create_connection()
+    if connection:
+        try:
+            with connection.cursor() as cursor:
+                # Группируем пациентов по дням недели и считаем их количество
+                cursor.execute('''
+                    SELECT TO_CHAR(visit_date, 'Day') AS day_of_week, COUNT(*) 
+                    FROM patients
+                    WHERE visit_date >= CURRENT_DATE - INTERVAL '7 days'
+                    GROUP BY day_of_week
+                    ORDER BY day_of_week;
+                ''')
+                patients_per_day = cursor.fetchall()
+                logging.info(f"Количество пациентов за каждый день недели: {patients_per_day}")
+                return patients_per_day
+        except Exception as e:
+            logging.error(f"Ошибка при получении количества пациентов за каждый день недели: {e}")
+            return []
+        finally:
+            close_connection(connection)
+    else:
+        logging.error("Не удалось подключиться к базе данных для получения количества пациентов.")
+        return []
+
+
+

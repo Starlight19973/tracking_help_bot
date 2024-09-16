@@ -1,19 +1,27 @@
 import psycopg2
-from psycopg2 import sql
 from bot.config import settings
 
 
-# Функция для создания подключения к базе данных
 def create_connection():
     try:
-        conn = psycopg2.connect(settings.db_url, client_encoding='UTF8')
-        return conn
-    except psycopg2.Error as e:
-        print(f"Ошибка при подключении к базе данных: {e}")
+        connection = psycopg2.connect(
+            dbname=settings.postgres_db,
+            user=settings.postgres_user,
+            password=settings.postgres_password,
+            host=settings.postgres_host,
+            port=settings.postgres_port
+        )
+        print("Успешное подключение к базе данных")
+        return connection
+    except Exception as _ex:
+        print("Ошибка при подключении к базе данных:", _ex)
         return None
 
 
-# Функция для закрытия подключения
-def close_connection(conn):
-    if conn:
-        conn.close()
+def close_connection(connection):
+    if connection:
+        connection.close()
+        print("Соединение с базой данных закрыто")
+
+
+

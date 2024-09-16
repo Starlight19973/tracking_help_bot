@@ -20,7 +20,7 @@ def validate_birth_date(birth_date: str) -> str:
         date = datetime.strptime(birth_date, '%d.%m.%Y')
         age = (datetime.now() - date).days // 365
         if age <= 100:
-            return date.strftime('%Y-%m-%d')  # Возвращаем дату в формате для БД
+            return date.strftime('%Y-%m-%d')
         return False
     except ValueError:
         return False
