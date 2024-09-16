@@ -20,7 +20,7 @@ BOT_TOKEN=ваш_токен_от_BotFather
 DB_URL=postgresql://user:password@localhost:5432/your_database
 ```
 
-### 3. Установите зависимоости проекта
+### 3. Установите зависимости проекта
 ```env
 pip install -r requirements.txt
 ```
